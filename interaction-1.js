@@ -51,8 +51,22 @@ tuono.createDSP(audioContext, 1024)
 //
 //==========================================================================================
 
+let fallStart = null;
+let fallTriggered = false;
+
 function accelerationChange(accx, accy, accz) {
-    // playAudio()
+    const mag = Math.sqrt(accx * accx + accy * accy + accz * accz);
+
+    if (mag < 3) {                       // 接近失重
+        if (fallStart === null) fallStart = millis();
+        if (!fallTriggered && millis() - fallStart > 200) {
+            playAudio();                 // 下落超过约 0.2 秒 → 打雷
+            fallTriggered = true;        // 一次下落只响一次
+        }
+    } else {
+        fallStart = null;
+        fallTriggered = false;
+    }
 }
 
 function rotationChange(rotx, roty, rotz) {
@@ -74,7 +88,6 @@ function deviceTurned() {
 function deviceShaken() {
     shaketimer = millis();
     statusLabels[0].style("color", "pink");
-    playAudio();
 }
 
 function getMinMaxParam(address) {
