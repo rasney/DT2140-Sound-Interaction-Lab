@@ -55,7 +55,18 @@ function accelerationChange(accx, accy, accz) {
     // playAudio()
 }
 
+let isLevel = false;
+
 function rotationChange(rotx, roty, rotz) {
+    const flat = Math.abs(rotx) < 1.5 && Math.abs(roty) < 1.5;   // 前后、左右都在 ±1.5° 内
+    const tilted = Math.abs(rotx) > 3 || Math.abs(roty) > 3;      // 明显倾斜
+
+    if (flat && !isLevel) {
+        playAudio();      // 刚变水平 → 叮一声
+        isLevel = true;
+    } else if (tilted) {
+        isLevel = false;  // 倾斜后才允许下一次响
+    }
 }
 
 function mousePressed() {
@@ -74,7 +85,6 @@ function deviceTurned() {
 function deviceShaken() {
     shaketimer = millis();
     statusLabels[0].style("color", "pink");
-    playAudio();
 }
 
 function getMinMaxParam(address) {
