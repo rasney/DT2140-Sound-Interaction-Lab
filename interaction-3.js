@@ -12,7 +12,7 @@ let dspNodeParams = null;
 let jsonParams = null;
 
 // Change here to ("tuono") depending on your wasm file name
-const dspName = "brass";
+const dspName = "door";
 const instance = new FaustWasm2ScriptProcessor(dspName);
 
 // output to window or npm package module
@@ -25,7 +25,7 @@ if (typeof module === "undefined") {
 }
 
 // The name should be the same as the WASM file, so change tuono with brass if you use brass.wasm
-brass.createDSP(audioContext, 1024)
+door.createDSP(audioContext, 1024)
     .then(node => {
         dspNode = node;
         dspNode.connect(audioContext.destination);
@@ -55,7 +55,24 @@ function accelerationChange(accx, accy, accz) {
     // playAudio()
 }
 
+let lastRoty = 0;
+let vol = 0;
+
 function rotationChange(rotx, roty, rotz) {
+    if (!dspNode) return;
+
+    // 倾斜角度 → 门开的位置
+    const tilt = Math.min(Math.abs(roty), 45);   // 只取 0–45°
+    const position = (tilt / 45) * 0.5;           // 映射到参数范围 0–0.5
+
+    // 倾斜速度 → 吱呀声大小（不动就安静）
+    const speed = Math.abs(roty - lastRoty);
+    lastRoty = roty;
+    const target = Math.min(speed / 3, 1);
+    vol = vol * 0.8 + target * 0.2;               // 平滑，避免声音忽大忽小
+
+    dspNode.setParamValue("/door/door/position", position);
+    dspNode.setParamValue("/door/volume", vol);
 }
 
 function mousePressed() {
@@ -74,7 +91,6 @@ function deviceTurned() {
 function deviceShaken() {
     shaketimer = millis();
     statusLabels[0].style("color", "pink");
-    playAudio();
 }
 
 function getMinMaxParam(address) {
@@ -95,15 +111,17 @@ function getMinMaxParam(address) {
 //
 //==========================================================================================
 
-function playAudio(pressure) {
+function playAudio(pos) {
+    // 仅用于电脑调试：点击页面时，按鼠标横向位置让门吱呀一下
     if (!dspNode) {
         return;
     }
     if (audioContext.state === 'suspended') {
         return;
     }
-    console.log(pressure)
-    dspNode.setParamValue("/brass/blower/pressure", pressure)
+    dspNode.setParamValue("/door/door/position", pos * 0.5);
+    dspNode.setParamValue("/door/volume", 0.7);
+    setTimeout(() => { dspNode.setParamValue("/door/volume", 0) }, 600);
 }
 
 //==========================================================================================
