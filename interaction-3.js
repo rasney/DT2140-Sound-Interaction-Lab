@@ -55,24 +55,25 @@ function accelerationChange(accx, accy, accz) {
     // playAudio()
 }
 
-let lastRoty = 0;
-let vol = 0;
+let lastRoty = null;
+let force = 0;        // 推门的力度 0–1
+let debugUntil = 0;   // 电脑调试时暂停传感器控制
 
 function rotationChange(rotx, roty, rotz) {
-    if (!dspNode) return;
+    if (!dspNode || millis() < debugUntil) return;
+    if (lastRoty === null) { lastRoty = roty; return; }
 
-    // 倾斜角度 → 门开的位置
-    const tilt = Math.min(Math.abs(roty), 45);   // 只取 0–45°
-    const position = (tilt / 45) * 0.5;           // 映射到参数范围 0–0.5
-
-    // 倾斜速度 → 吱呀声大小（不动就安静）
-    const speed = Math.abs(roty - lastRoty);
+    // 左右翻转的速度（每帧转了多少度）
+    let speed = Math.abs(roty - lastRoty);
     lastRoty = roty;
-    const target = Math.min(speed / 3, 1);
-    vol = vol * 0.8 + target * 0.2;               // 平滑，避免声音忽大忽小
+    if (speed > 20) speed = 0;               // 越过 ±90° 时的数值跳变，不算转动
 
-    dspNode.setParamValue("/door/door/position", position);
-    dspNode.setParamValue("/door/volume", vol);
+    // 翻得越快 → 推门越用力；停下 → 力度回落，门自然安静
+    const target = Math.min(speed / 4, 1);
+    force = force * 0.85 + target * 0.15;    // 平滑
+
+    dspNode.setParamValue("/door/door/position", force * 0.5);
+    dspNode.setParamValue("/door/volume", 1.0);
 }
 
 function mousePressed() {
@@ -119,9 +120,9 @@ function playAudio(pos) {
     if (audioContext.state === 'suspended') {
         return;
     }
+    debugUntil = millis() + 800;
     dspNode.setParamValue("/door/door/position", pos * 0.5);
-    dspNode.setParamValue("/door/volume", 0.7);
-    setTimeout(() => { dspNode.setParamValue("/door/volume", 0) }, 600);
+    dspNode.setParamValue("/door/volume", 1.0);
 }
 
 //==========================================================================================
