@@ -56,9 +56,9 @@ let fallTriggered = false;
 function accelerationChange(accx, accy, accz) {
     const zAcceleration = Math.abs(accz);
 
-    if (zAcceleration < 3) {             // 只检测 Z 轴，接近失重
+    if (zAcceleration < 2) {             // 只检测 Z 轴，接近失重
         if (fallStart === null) fallStart = millis();
-        if (!fallTriggered && millis() - fallStart > 200) {
+        if (!fallTriggered && millis() - fallStart > 800) {
             playAudio();                 // 下落超过约 0.2 秒 → 播放水滴声
             fallTriggered = true;        // 一次下落只响一次
         }
