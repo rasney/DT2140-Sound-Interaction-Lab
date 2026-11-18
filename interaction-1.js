@@ -55,9 +55,9 @@ let fallStart = null;
 let fallTriggered = false;
 
 function accelerationChange(accx, accy, accz) {
-    const mag = Math.sqrt(accx * accx + accy * accy + accz * accz);
+    const zAcceleration = Math.abs(accz);
 
-    if (mag < 3) {                       // 接近失重
+    if (zAcceleration < 3) {             // 只检测 Z 轴，接近失重
         if (fallStart === null) fallStart = millis();
         if (!fallTriggered && millis() - fallStart > 200) {
             playAudio();                 // 下落超过约 0.2 秒 → 打雷
