@@ -50,22 +50,49 @@ drop.createDSP(audioContext, 1024)
 //
 //==========================================================================================
 
+// 注意：p5.js 的 accelerationX/Y/Z 来自 e.acceleration，按 Web 标准是"去掉重力"的加速度，
+// 静止时约为 0，不能用来判断自由落体。这里自己读取"含重力"的加速度：
+// 静止时合加速度约 9.8 m/s²，自由落体时接近 0，而且和手机朝向无关。
+let gMag = 9.8;              // 含重力的三轴合加速度 (m/s²)
+window.addEventListener("devicemotion", (e) => {
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x === null) return;
+    gMag = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+});
+
+const FALL_THRESHOLD = 3;    // m/s²：远低于静止时的 9.8，才算失重
+const FALL_TIME = 250;       // ms：自由下落 30 cm 约需 0.25 s（h = ½gt²）
+const RESET_THRESHOLD = 7;   // m/s²：重新感受到重力（被接住/落地）后才允许下一次
+
 let fallStart = null;
 let fallTriggered = false;
+let dbg = null;
+
+function showDebug(txt) {
+    // 页面底部的调试信息，方便在手机上看数值
+    if (!dbg) {
+        dbg = document.createElement("div");
+        dbg.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:999;" +
+            "background:#000;color:#0f0;font:14px monospace;padding:6px;";
+        document.body.appendChild(dbg);
+    }
+    dbg.textContent = txt;
+}
 
 function accelerationChange(accx, accy, accz) {
-    const zAcceleration = Math.abs(accz);
-
-    if (zAcceleration < 2) {             // 只检测 Z 轴，接近失重
+    if (gMag < FALL_THRESHOLD) {                 // 失重：开始或继续计时
         if (fallStart === null) fallStart = millis();
-        if (!fallTriggered && millis() - fallStart > 800) {
-            playAudio();                 // 下落超过约 0.2 秒 → 播放水滴声
-            fallTriggered = true;        // 一次下落只响一次
+        if (!fallTriggered && millis() - fallStart > FALL_TIME) {
+            playAudio();                         // 自由下落超过约 30 cm → 水滴声
+            fallTriggered = true;                // 一次下落只响一次
         }
     } else {
-        fallStart = null;
-        fallTriggered = false;
+        fallStart = null;                        // 不再失重，计时清零
+        if (gMag > RESET_THRESHOLD) fallTriggered = false;
     }
+
+    showDebug("|a| incl. gravity: " + gMag.toFixed(1) + " m/s²" +
+        (fallStart !== null ? "  FALLING " + (millis() - fallStart) + " ms" : ""));
 }
 
 function rotationChange(rotx, roty, rotz) {
