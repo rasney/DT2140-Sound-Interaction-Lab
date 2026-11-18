@@ -11,8 +11,8 @@ let dspNode = null;
 let dspNodeParams = null;
 let jsonParams = null;
 
-// Change here to ("tuono") depending on your wasm file name
-const dspName = "tuono";
+// The name should match the WASM file.
+const dspName = "drop";
 const instance = new FaustWasm2ScriptProcessor(dspName);
 
 // output to window or npm package module
@@ -24,8 +24,7 @@ if (typeof module === "undefined") {
     module.exports = exp;
 }
 
-// The name should be the same as the WASM file, so change tuono with brass if you use brass.wasm
-tuono.createDSP(audioContext, 1024)
+drop.createDSP(audioContext, 1024)
     .then(node => {
         dspNode = node;
         dspNode.connect(audioContext.destination);
@@ -33,7 +32,7 @@ tuono.createDSP(audioContext, 1024)
         const jsonString = dspNode.getJSON();
         jsonParams = JSON.parse(jsonString)["ui"][0]["items"];
         dspNodeParams = jsonParams
-        // const exampleMinMaxParam = findByAddress(dspNodeParams, "/thunder/rumble");
+        // const exampleMinMaxParam = findByAddress(dspNodeParams, "/drop/drop");
         // // ALWAYS PAY ATTENTION TO MIN AND MAX, ELSE YOU MAY GET REALLY HIGH VOLUMES FROM YOUR SPEAKERS
         // const [exampleMinValue, exampleMaxValue] = getParamMinMax(exampleMinMaxParam);
         // console.log('Min value:', exampleMinValue, 'Max value:', exampleMaxValue);
@@ -60,7 +59,7 @@ function accelerationChange(accx, accy, accz) {
     if (zAcceleration < 3) {             // 只检测 Z 轴，接近失重
         if (fallStart === null) fallStart = millis();
         if (!fallTriggered && millis() - fallStart > 200) {
-            playAudio();                 // 下落超过约 0.2 秒 → 打雷
+            playAudio();                 // 下落超过约 0.2 秒 → 播放水滴声
             fallTriggered = true;        // 一次下落只响一次
         }
     } else {
@@ -115,12 +114,8 @@ function playAudio() {
     if (audioContext.state === 'suspended') {
         return;
     }
-    // Edit here the addresses ("/thunder/rumble") depending on your WASM controls (you can see 
-    // them printed on the console of your browser when you load the page)
-    // For example if you change to a bell sound, here you could use "/churchBell/gate" instead of
-    // "/thunder/rumble".
-    dspNode.setParamValue("/thunder/rumble", 1)
-    setTimeout(() => { dspNode.setParamValue("/thunder/rumble", 0) }, 100);
+    dspNode.setParamValue("/drop/drop", 1);
+    setTimeout(() => { dspNode.setParamValue("/drop/drop", 0); }, 100);
 }
 
 //==========================================================================================
