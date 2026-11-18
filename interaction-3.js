@@ -60,23 +60,9 @@ function accelerationChange(accx, accy, accz) {
 
 let lastRoty = null;
 let force = 0;        // 推门的力度 0–1
-let debugUntil = 0;   // 电脑调试时暂停传感器控制
-let dbg = null;
-
-function showDebug(txt) {
-    // 页面底部的调试信息，方便在手机上看数值
-    if (!dbg) {
-        dbg = document.createElement("div");
-        dbg.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:999;" +
-            "background:#000;color:#0f0;font:14px monospace;padding:6px;";
-        document.body.appendChild(dbg);
-    }
-    dbg.textContent = txt;
-}
 
 function rotationChange(rotx, roty, rotz) {
-    if (!dspNode) { showDebug("door.wasm loading..."); return; }
-    if (millis() < debugUntil) return;
+    if (!dspNode) return;
     if (lastRoty === null) { lastRoty = roty; return; }
 
     // 左右倾斜的速度（每帧转了多少度）
@@ -91,15 +77,10 @@ function rotationChange(rotx, roty, rotz) {
 
     dspNode.setParamValue("/door/door/position", position);
     dspNode.setParamValue("/door/volume", 1.0);
-
-    showDebug("audio:" + audioContext.state +
-        " rotY:" + roty.toFixed(1) +
-        " speed:" + speed.toFixed(1) +
-        " force:" + force.toFixed(2));
 }
 
 function mousePressed() {
-    playAudio(mouseX/windowWidth)
+    // playAudio()
     // Use this for debugging from the desktop!
 }
 
@@ -134,18 +115,6 @@ function getMinMaxParam(address) {
 //
 //==========================================================================================
 
-function playAudio(pos) {
-    // 仅用于电脑调试：点击页面时，按鼠标横向位置让门吱呀一下
-    if (!dspNode) {
-        return;
-    }
-    if (audioContext.state === 'suspended') {
-        return;
-    }
-    debugUntil = millis() + 800;
-    dspNode.setParamValue("/door/door/position", pos * 0.5);
-    dspNode.setParamValue("/door/volume", 1.0);
-}
 
 //==========================================================================================
 // END
